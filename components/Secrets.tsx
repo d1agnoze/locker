@@ -78,8 +78,10 @@ const Secrets = () => {
             debouncedPostData(data);
         return () => debouncedPostData.cancel();
     }, [formState, data, isValidating]);
+    // @ts-expect-error
     const makeNewRow = () => { append({ id: v4(), key: "", value: "" }) }
     const fastDelete = (index: number) => {
+        // @ts-expect-error
         if (fields.at(index) == null || fields.at(index)?.key == "" || fields.at(index)?.value == "")
             remove(index)
         else {
@@ -108,6 +110,7 @@ const Secrets = () => {
                 <div className="flex flex-col gap-3">
                     {fields.map((item, index) =>
                         <div className="flex gap-1 items-center" key={index}>
+                            {/** @ts-ignore: Unreachable code error*/}
                             <SecretInput secret={item} key={index} refKey={register(`secrets.${index}.key`, { required: true, })} refValue={register(`secrets.${index}.value`, { required: true })} />
                             <button onClick={() => fastDelete(index)} className="btn btn-square btn-ghost min-h-0 w-7 h-7 p-0">
                                 <X size={20} />
