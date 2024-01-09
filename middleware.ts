@@ -1,24 +1,28 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/middleware'
+import { AuthState } from './utils/supabase/auth_checker'
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 
-export async function middleware(request: NextRequest) {
+export async function middleware(req: NextRequest) {
   try {
-    // This `try/catch` block is only here for the interactive tutorial.
-    // Feel free to remove once you have Supabase connected.
-    const { supabase, response } = createClient(request)
+    const res = NextResponse.next()
 
-    // Refresh session if expired - required for Server Components
-    // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
+    // Create a Supabase client configured to use cookies
+    const supabase = createMiddlewareClient({ req, res })
     await supabase.auth.getSession()
-
-    return response
+    if (req.nextUrl.pathname.startsWith('/dashboard') && AuthState() == null) {
+      req.nextUrl.searchParams.set('from', req.nextUrl.pathname.slice(1))
+      req.nextUrl.pathname = '/login'
+      return NextResponse.redirect(req.nextUrl)
+    }
+    if (req.nextUrl.pathname.startsWith('/api') && AuthState() == null) {
+      return new Response('Unauthorized', { status: 401 })
+    }
+    return res
   } catch (e) {
-    // If you are here, a Supabase client could not be created!
-    // This is likely because you have not set up environment variables.
-    // Check out http://localhost:3000 for Next Steps.
     return NextResponse.next({
       request: {
-        headers: request.headers,
+        headers: req.headers,
       },
     })
   }
