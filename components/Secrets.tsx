@@ -15,7 +15,6 @@ import { Plus, X } from "lucide-react";
 import { SubmitHandler, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { debounce } from 'lodash';
-import Supabase from "@/utils/supabase/getSupabase";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { v4 } from "uuid";
 import useSaved from "@/utils/hooks/useSaved";
@@ -31,10 +30,11 @@ const Secrets = () => {
     const [openAlert, setOpen] = useState<boolean>(false);
     const [prefetch, setPreFetch] = useState<Secret[]>([])
     useEffect(() => {
-        fetch('/api/secret').then(res => res.json()).then(({ data }: { data: Secret[] }) => {
-            console.log(data);
-            setValue('secrets', data)
-            setPreFetch(data)
+        fetch('/api/secret').then(res => res.json()).then(({ decrypt }: { decrypt: Secret[] }) => {
+            console.log(decrypt);
+            const first_fetch = decrypt ? decrypt : []
+            setValue('secrets', first_fetch)
+            setPreFetch(first_fetch)
         }).catch((_) => { toast.error('Unable to connect to database') })
     }, [])
     useEffect(() => {
@@ -54,9 +54,11 @@ const Secrets = () => {
         const output = compareSecretArrays(prefetch, updatedSecrets)
         if (output.length > 0) {
             toast.info('Saving...')
-            const supabase = createClientComponentClient()
-            const { error } = await supabase.from('secrets').upsert([...output]).select()
-            error ? toast.warn(error.message) : setPreFetch([...updatedSecrets])
+            await fetch('/api/secret', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', },
+                body: JSON.stringify(output)
+            }).then(() => { setPreFetch([...updatedSecrets]) }).catch((error) => { toast.warn(error.message) })
         }
     }
     const debouncedPostData = debounce(onSubmit, 2000);
@@ -78,14 +80,14 @@ const Secrets = () => {
         }
     }
     const deleteRow = (index: number | null): void => {
-        if (!index) 
+        if (!index)
             return
         fields.at(index)?.id ? setDel([...del, fields.at(index)!.id]) : null
         remove(index)
         setOpen(false)
     }
     return (<>
-        <form onSubmit={(e)=> e.preventDefault()}>
+        <form onSubmit={(e) => e.preventDefault()}>
             <div className="flex flex-col gap-5">
                 <div className="flex gap-3">
                     <button className="btn btn-square btn-primary min-h-0 w-7 h-7 p-0" onClick={makeNewRow}><Plus size={20} /></button>
