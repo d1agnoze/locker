@@ -5,7 +5,8 @@ export async function GET(request: Request) {
     const { data, error } = await Supabase().from('secrets').select(`
         id, 
         key, 
-        value
+        value,
+        title
         `)
     if (error) {
         return new Response('Something went wrong', { status: 400 })

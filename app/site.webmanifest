@@ -1,0 +1,21 @@
+{
+  "name": "Locker",
+  "short_name": "Locker",
+  "start_url": ".",
+  "description": "a Note app that's actually useless",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#2a303c",
+  "background_color": "#2a303c",
+  "display": "standalone"
+}

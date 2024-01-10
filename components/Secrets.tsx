@@ -18,11 +18,12 @@ import { debounce } from 'lodash';
 import Supabase from "@/utils/supabase/getSupabase";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { v4 } from "uuid";
+import useSaved from "@/utils/hooks/useSaved";
 type Input = {
     secrets: Secret[]
 }
 const Secrets = () => {
-    const { register, handleSubmit, control, watch, formState, formState: { errors, isValidating }, setValue } = useForm<Input>({ mode: 'onChange' })
+    const { register, control, watch, formState, formState: { errors, isValidating }, setValue } = useForm<Input>({ mode: 'onChange' })
     // @ts-expect-error
     const { fields, remove, append } = useFieldArray<Input>({ control, name: "secrets", keyName: '_id' })
     const [del, setDel] = useState<string[]>([])
@@ -30,8 +31,8 @@ const Secrets = () => {
     const [openAlert, setOpen] = useState<boolean>(false);
     const [prefetch, setPreFetch] = useState<Secret[]>([])
     useEffect(() => {
-        //for testing 🧪
         fetch('/api/secret').then(res => res.json()).then(({ data }: { data: Secret[] }) => {
+            console.log(data);
             setValue('secrets', data)
             setPreFetch(data)
         }).catch((_) => { toast.error('Unable to connect to database') })
@@ -43,35 +44,22 @@ const Secrets = () => {
     }, [openAlert])
     const onSubmit: SubmitHandler<Input> = async (payload) => {
         console.log('comparing...');
-        //checking del stack
         if (del.length > 0) {
-            console.table(del);
             const supabase = createClientComponentClient()
-            const { data, error, status, statusText } = await supabase.rpc('delete_secrets', { "ids": del })
-            console.log('err', error);
-            console.log('data', data);
-
-            if (!error)
-                setDel([])
+            const { error } = await supabase.rpc('delete_secrets', { "ids": del })
+            error ? setDel([]) : toast.error(error.message)
         }
         const { secrets } = payload
-        const output = compareSecretArrays(prefetch, secrets)
+        const updatedSecrets = useSaved(secrets);
+        const output = compareSecretArrays(prefetch, updatedSecrets)
         if (output.length > 0) {
-            //handle POST
             toast.info('Saving...')
-            console.log(output);
-            setPreFetch(secrets)
             const supabase = createClientComponentClient()
-            const { data, error } = await supabase
-                .from('secrets')
-                .upsert([...secrets])
-                .select()
-            if (error) {
-                toast.warn(error.message)
-            }
+            const { error } = await supabase.from('secrets').upsert([...output]).select()
+            error ? toast.warn(error.message) : setPreFetch([...updatedSecrets])
         }
     }
-    const debouncedPostData = debounce(onSubmit, 3000);
+    const debouncedPostData = debounce(onSubmit, 2000);
     const data = watch();
     useEffect(() => {
         if (formState.isValid && !isValidating && formState.isDirty)
@@ -79,7 +67,7 @@ const Secrets = () => {
         return () => debouncedPostData.cancel();
     }, [formState, data, isValidating]);
     // @ts-expect-error
-    const makeNewRow = () => { append({ id: v4(), key: "", value: "" }) }
+    const makeNewRow = () => { append({ id: v4(), key: "", value: "", title: "" }) }
     const fastDelete = (index: number) => {
         // @ts-expect-error
         if (fields.at(index) == null || fields.at(index)?.key == "" || fields.at(index)?.value == "")
@@ -90,38 +78,33 @@ const Secrets = () => {
         }
     }
     const deleteRow = (index: number | null): void => {
-        if (!index)
+        if (!index) 
             return
         fields.at(index)?.id ? setDel([...del, fields.at(index)!.id]) : null
-        console.log(fields.at(index));
-
         remove(index)
         setOpen(false)
     }
     return (<>
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={(e)=> e.preventDefault()}>
             <div className="flex flex-col gap-5">
                 <div className="flex gap-3">
-                    <button className="btn btn-square btn-primary min-h-0 w-7 h-7 p-0" onClick={makeNewRow}>
-                        <Plus size={20} />
-                    </button>
-                    {/* <button type="submit" className="btn btn-accent min-h-0 h-7 p-0">submit</button> */}
+                    <button className="btn btn-square btn-primary min-h-0 w-7 h-7 p-0" onClick={makeNewRow}><Plus size={20} /></button>
                 </div>
                 <div className="flex flex-col gap-3">
                     {fields.map((item, index) =>
-                        <div className="flex gap-1 items-center" key={index}>
-                            {/** @ts-ignore: Unreachable code error*/}
-                            <SecretInput secret={item} key={index} refKey={register(`secrets.${index}.key`, { required: true, })} refValue={register(`secrets.${index}.value`, { required: true })} />
-                            <button onClick={() => fastDelete(index)} className="btn btn-square btn-ghost min-h-0 w-7 h-7 p-0">
-                                <X size={20} />
-                            </button>
+                        <div className="flex flex-col" key={item.id}>
+                            <Input type="text" className="border-none h-5 focus:border-b-primary p-0" {...register(`secrets.${index}.title`)} />
+                            <div className="divider m-0"></div>
+                            <div className="flex gap-1 items-center" >
+                                {/** @ts-ignore: Unreachable code error*/}
+                                <SecretInput secret={item} key={index} refKey={register(`secrets.${index}.key`, { required: true, })} refValue={register(`secrets.${index}.value`, { required: true })} />
+                                <button onClick={() => fastDelete(index)} className="btn btn-square btn-ghost min-h-0 w-7 h-7 p-0">
+                                    <X size={20} />
+                                </button>
+                            </div>
                         </div>
                     )}
-                    {errors.secrets && <div className="toast toast-top toast-end">
-                        <div className="alert alert-info ">
-                            <span>All fields are required.</span>
-                        </div>
-                    </div>}
+                    {errors.secrets && <div className="toast toast-top toast-end"><div className="alert alert-info "><span>All fields are required.</span></div></div>}
                 </div>
             </div>
         </form>
@@ -166,19 +149,10 @@ export default Secrets;
  * console.log(resultArray);
  */
 function compareSecretArrays(arr1: Secret[], arr2: Secret[]): Secret[] {
+    console.log(arr1);
     const idsInArr1 = new Set(arr1.map(obj => obj.id));
-
     const uniqueAndChangedElementsInArr2 = arr2.filter(obj => {
-        // Check if the element is not present in arr1 or if the key or value has changed
-        return (
-            !idsInArr1.has(obj.id) ||
-            arr1.some(
-                oldObj =>
-                    oldObj.id === obj.id &&
-                    (oldObj.key !== obj.key || oldObj.value !== obj.value)
-            )
-        );
+        return (!idsInArr1.has(obj.id) || arr1.some(oldObj => oldObj.id === obj.id && (oldObj.key !== obj.key || oldObj.value !== obj.value || (oldObj.title !== obj.title && !(oldObj.title == null && obj.title.trim() === '')))));
     });
-
     return uniqueAndChangedElementsInArr2;
 }
