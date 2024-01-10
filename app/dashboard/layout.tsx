@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { drawer_map } from './../../utils/drawer/map';
 import { CookiesProvider } from 'next-client-cookies/server';
+import Image from 'next/image';
 
 export default function DashboardLayout({
     children, // will be a page or nested layout
@@ -28,7 +29,7 @@ export default function DashboardLayout({
             <div className="drawer lg:drawer-open">
                 <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
                 <div className="drawer-content">
-                    <nav className="w-full flex justify-center navbar bg-base-100">
+                    <nav className="w-full flex justify-center navbar bg-base-100 sticky top-0 left-0 z-10">
                         <div className="flex-none">
                             <label htmlFor="my-drawer-2" className="btn btn-square btn-ghost lg:hidden">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-5 h-5 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
@@ -47,11 +48,11 @@ export default function DashboardLayout({
                         </CookiesProvider>
                     </div>
                 </div>
-                <div className="drawer-side">
+                <div className="drawer-side z-20">
                     <label htmlFor="my-drawer-2" aria-label="close sidebar" className="drawer-overlay"></label>
                     <ul className="menu p-4 w-80 min-h-full bg-base-200 text-base-content lg:pt-12 sm:max-md:pt-4">
                         <div className="flex flex-col items-start lg:pl-4 mb-2 gap-2 sm:max-md:hidden">
-                            <img src="https://i.pinimg.com/originals/9a/3c/3f/9a3c3fb5f73822af8514df07f6676392.gif" className="rounded-full lg:w-28 h-28 object-cover" alt="" />
+                            <Image width={0} height={0} sizes='100%' style={{width:'7rem', height:'7rem'}} src="https://i.pinimg.com/originals/9a/3c/3f/9a3c3fb5f73822af8514df07f6676392.gif" className="rounded-full object-cover" alt="" />
                             <h1 className='text-2xl font-bold'>Feature 🌼</h1>
                         </div>
                         {drawer_map.map((item, index) => (

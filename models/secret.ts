@@ -3,4 +3,5 @@ export default interface Secret {
     key: string
     value: string
     id?: string
+    title? : string
 }
