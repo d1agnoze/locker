@@ -31,7 +31,6 @@ const Secrets = () => {
     const [prefetch, setPreFetch] = useState<Secret[]>([])
     useEffect(() => {
         fetch('/api/secret').then(res => res.json()).then(({ decrypt }: { decrypt: Secret[] }) => {
-            console.log(decrypt);
             const first_fetch = decrypt ? decrypt : []
             setValue('secrets', first_fetch)
             setPreFetch(first_fetch)
@@ -43,7 +42,6 @@ const Secrets = () => {
         }
     }, [openAlert])
     const onSubmit: SubmitHandler<Input> = async (payload) => {
-        console.log('comparing...');
         if (del.length > 0) {
             const supabase = createClientComponentClient()
             const { error } = await supabase.rpc('delete_secrets', { "ids": del })
@@ -148,10 +146,8 @@ export default Secrets;
  * ];
  *
  * const resultArray = compareSecretArrays(array1, array2);
- * console.log(resultArray);
  */
 function compareSecretArrays(arr1: Secret[], arr2: Secret[]): Secret[] {
-    console.log(arr1);
     const idsInArr1 = new Set(arr1.map(obj => obj.id));
     const uniqueAndChangedElementsInArr2 = arr2.filter(obj => {
         return (!idsInArr1.has(obj.id) || arr1.some(oldObj => oldObj.id === obj.id && (oldObj.key !== obj.key || oldObj.value !== obj.value || (oldObj.title !== obj.title && !(oldObj.title == null && obj.title.trim() === '')))));
