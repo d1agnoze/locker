@@ -1,5 +1,5 @@
 const Page = () => {
-    return (<p>Hello from note</p>  );
+    return (<p>Note feature is under developement</p>  );
 }
  
-export default Page;<p>Hello from note</p>
+export default Page;

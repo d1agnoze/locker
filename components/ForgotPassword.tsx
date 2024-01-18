@@ -10,11 +10,9 @@ const ForgotPassword = () => {
         const { data, error } = await supabase.auth
             .resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/forgot` })
         if (error) {
-            console.log(error);
             toast.warn('Something went wrong!')
         }
         else {
-            console.log(data);
             toast.success('Reset email sent!')
         }
 
@@ -22,7 +20,6 @@ const ForgotPassword = () => {
     useEffect(() => {
         const supabase = createClientComponentClient()
         supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log(event);
             if (session!=null && session.user!=null) {
                 const newPassword = prompt("What would you like your new password to be?");
                 if (newPassword) {
